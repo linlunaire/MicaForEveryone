@@ -333,4 +333,10 @@
   <data name="LanguageRestartErrorMessage" xml:space="preserve">
     <value>Your language choice is saved. Restart the app manually to apply it.</value>
   </data>
+  <data name="LanguageChangeErrorTitle" xml:space="preserve">
+    <value>Could not change the language</value>
+  </data>
+  <data name="LanguageChangeErrorMessage" xml:space="preserve">
+    <value>Your language choice has not changed. Resolve any saving errors and save your settings successfully before trying again.</value>
+  </data>
 </root>

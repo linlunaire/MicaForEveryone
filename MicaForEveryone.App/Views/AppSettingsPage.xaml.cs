@@ -5,6 +5,10 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.Windows.AppLifecycle;
 using System.Threading.Tasks;
 using System;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
 using Windows.Globalization;
 using Windows.ApplicationModel.Core;
 
@@ -23,6 +27,7 @@ public sealed partial class AppSettingsPage : Page
 
     private ISettingsService SettingsService { get; }
     private ILocalizationService LocalizationService { get; }
+    private bool unloaded;
 
     public AppSettingsPage()
     {
@@ -63,19 +68,44 @@ public sealed partial class AppSettingsPage : Page
             && !string.Equals(languageTag, LocalizationService.CurrentLanguage, StringComparison.OrdinalIgnoreCase))
         {
             LanguageComboBox.IsEnabled = false;
-            await SettingsService.SaveAsync();
-            LocalizationService.SetLanguage(languageTag);
-            // WinUI caches x:Uid resources. Restart so every surface uses the new language.
-            AppRestartFailureReason reason = AppInstance.Restart("--settings");
-            if (reason != AppRestartFailureReason.RestartPending)
+            bool languageSaved = false;
+            bool failed = false;
+            try
             {
+                // Let existing rule edits finish without rewriting settings just to change language.
+                await SettingsService.WaitForPendingSaveAsync();
+                if (unloaded)
+                    return;
+                LocalizationService.SetLanguage(languageTag);
+                languageSaved = true;
+                // WinUI caches x:Uid resources. Restart so every surface uses the new language.
+                failed = AppInstance.Restart("--settings") != AppRestartFailureReason.RestartPending;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or COMException or Win32Exception)
+            {
+                Debug.WriteLine(ex);
+                failed = true;
+            }
+            finally
+            {
+                if (!languageSaved && e.RemovedItems.Count > 0)
+                {
+                    LanguageComboBox.SelectionChanged -= LanguageComboBox_SelectionChanged;
+                    LanguageComboBox.SelectedItem = e.RemovedItems[0];
+                    if (!unloaded)
+                        LanguageComboBox.SelectionChanged += LanguageComboBox_SelectionChanged;
+                }
                 LanguageComboBox.IsEnabled = true;
+            }
+
+            if (failed && !unloaded && XamlRoot is not null)
+            {
                 ContentDialog dialog = new()
                 {
                     XamlRoot = XamlRoot,
-                    Title = LocalizationService.GetLocalizedString("LanguageRestartErrorTitle"),
-                    Content = LocalizationService.GetLocalizedString("LanguageRestartErrorMessage"),
-                    CloseButtonText = LocalizationService.GetLocalizedString("CancelButton.Content")
+                    Title = LocalizationService.GetLocalizedString(languageSaved ? "LanguageRestartErrorTitle" : "LanguageChangeErrorTitle"),
+                    Content = LocalizationService.GetLocalizedString(languageSaved ? "LanguageRestartErrorMessage" : "LanguageChangeErrorMessage"),
+                    CloseButtonText = LocalizationService.GetLocalizedString("CancelButton/Content")
                 };
                 await dialog.ShowAsync();
             }
@@ -104,6 +134,7 @@ public sealed partial class AppSettingsPage : Page
 
     private void Page_Unloaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
+        unloaded = true;
         Unloaded -= Page_Unloaded;
         StartupToggle.Toggled -= StartupToggle_Toggled;
         TelemetryToggle.Toggled -= TelemetryToggle_Toggled;

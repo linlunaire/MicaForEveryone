@@ -333,4 +333,10 @@
   <data name="LanguageRestartErrorMessage" xml:space="preserve">
     <value>语言选择已保存。请手动重启应用以应用所选语言。</value>
   </data>
+  <data name="LanguageChangeErrorTitle" xml:space="preserve">
+    <value>无法更改语言</value>
+  </data>
+  <data name="LanguageChangeErrorMessage" xml:space="preserve">
+    <value>语言选择尚未更改。请先解决保存失败的问题，成功保存设置后再重试。</value>
+  </data>
 </root>
