@@ -66,13 +66,15 @@ public sealed unsafe class MainAppService
         }
     }
 
-    public void ActivateSettings()
+    public void ActivateSettings(bool showAppSettings = false)
     {
         _window ??= new SettingsWindow();
         _window.Closed += _window_Closed;
         _window.Activate();
         HWND hwnd = new HWND((void*)WindowNative.GetWindowHandle(_window));
         SetForegroundWindow(hwnd);
+        if (showAppSettings)
+            _window.ShowAppSettings();
     }
 
     [DynamicWindowsRuntimeCast(typeof(Window))]
@@ -86,15 +88,6 @@ public sealed unsafe class MainAppService
     {
         _window?.Close();
         DestroyWindow(_mainWnd);
-    }
-
-    public void ReloadSettings()
-    {
-        _window?.Close();
-        if (_source is not null)
-            _source.Content = new TrayIconPage();
-        ActivateSettings();
-        _window!.ShowAppSettings();
     }
 
     [UnmanagedCallersOnly]

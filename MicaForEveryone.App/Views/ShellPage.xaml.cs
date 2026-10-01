@@ -30,7 +30,12 @@ public sealed partial class ShellPage : Page
         NavigationViewControl.IsPaneOpen = !NavigationViewControl.IsPaneOpen;
     }
 
-    public void ShowAppSettings() => NavigationViewControl.SelectedItem = AppSettingsItem;
+    public void ShowAppSettings()
+    {
+        NavigationViewControl.SelectedItem = AppSettingsItem;
+        AppSettingsItem.IsSelected = true;
+        _contentFrame.Navigate(typeof(AppSettingsPage));
+    }
 
     private void RuleListView_SelectionChanged(Controls.Navigation.NavigationView sender, Controls.Navigation.NavigationViewSelectionChangedEventArgs e)
     {

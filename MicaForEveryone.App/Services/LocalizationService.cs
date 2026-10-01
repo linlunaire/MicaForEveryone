@@ -10,13 +10,7 @@ namespace MicaForEveryone.App.Services;
 
 public sealed class LocalizationService : ILocalizationService
 {
-    private readonly ResourceManager resourceManager = new();
-    private ResourceContext resourceContext;
-
-    public LocalizationService()
-    {
-        resourceContext = CreateResourceContext();
-    }
+    private readonly ResourceLoader resourceLoader = new();
 
     public IReadOnlyList<string> SupportedLanguages => ApplicationLanguages.ManifestLanguages;
 
@@ -28,14 +22,6 @@ public sealed class LocalizationService : ILocalizationService
             throw new ArgumentException("Unsupported language.", nameof(languageTag));
 
         ApplicationLanguages.PrimaryLanguageOverride = languageTag;
-        resourceContext = CreateResourceContext();
-    }
-
-    private ResourceContext CreateResourceContext()
-    {
-        var context = resourceManager.CreateResourceContext();
-        context.QualifierValues["Language"] = string.Join(";", ApplicationLanguages.Languages);
-        return context;
     }
 
     public string GetLocalizedBackdropType(BackdropType backdropType)
@@ -64,7 +50,7 @@ public sealed class LocalizationService : ILocalizationService
 
     public string GetLocalizedString(string key)
     {
-        return resourceManager.MainResourceMap.GetSubtree("Resources").GetValue(key, resourceContext).ValueAsString;
+        return resourceLoader.GetString(key);
     }
 
     public string GetLocalizedTitleBarColor(TitleBarColorMode titleBarColorMode)

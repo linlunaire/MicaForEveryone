@@ -322,9 +322,15 @@
     <value>語言</value>
   </data>
   <data name="LanguageCard.Description" xml:space="preserve">
-    <value>變更介面語言並儲存選擇。</value>
+    <value>選擇後將自動重新啟動應用程式以套用語言。</value>
   </data>
   <data name="SystemLanguageName" xml:space="preserve">
     <value>依照系統</value>
+  </data>
+  <data name="LanguageRestartErrorTitle" xml:space="preserve">
+    <value>無法重新啟動應用程式</value>
+  </data>
+  <data name="LanguageRestartErrorMessage" xml:space="preserve">
+    <value>語言選擇已儲存。請手動重新啟動應用程式以套用所選語言。</value>
   </data>
 </root>

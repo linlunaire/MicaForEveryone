@@ -1,11 +1,12 @@
 using MicaForEveryone.App.ViewModels;
-using MicaForEveryone.App.Services;
 using MicaForEveryone.CoreUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.Windows.AppLifecycle;
 using System.Threading.Tasks;
 using System;
 using Windows.Globalization;
+using Windows.ApplicationModel.Core;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -56,13 +57,28 @@ public sealed partial class AppSettingsPage : Page
         LanguageComboBox.SelectionChanged += LanguageComboBox_SelectionChanged;
     }
 
-    private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (LanguageComboBox.SelectedItem is ComboBoxItem { Tag: string languageTag }
             && !string.Equals(languageTag, LocalizationService.CurrentLanguage, StringComparison.OrdinalIgnoreCase))
         {
+            LanguageComboBox.IsEnabled = false;
+            await SettingsService.SaveAsync();
             LocalizationService.SetLanguage(languageTag);
-            DispatcherQueue.TryEnqueue(() => App.Services.GetRequiredService<MainAppService>().ReloadSettings());
+            // WinUI caches x:Uid resources. Restart so every surface uses the new language.
+            AppRestartFailureReason reason = AppInstance.Restart("--settings");
+            if (reason != AppRestartFailureReason.RestartPending)
+            {
+                LanguageComboBox.IsEnabled = true;
+                ContentDialog dialog = new()
+                {
+                    XamlRoot = XamlRoot,
+                    Title = LocalizationService.GetLocalizedString("LanguageRestartErrorTitle"),
+                    Content = LocalizationService.GetLocalizedString("LanguageRestartErrorMessage"),
+                    CloseButtonText = LocalizationService.GetLocalizedString("CancelButton.Content")
+                };
+                await dialog.ShowAsync();
+            }
         }
     }
 

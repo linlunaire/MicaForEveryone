@@ -322,9 +322,15 @@
     <value>Language</value>
   </data>
   <data name="LanguageCard.Description" xml:space="preserve">
-    <value>Changes the display language and saves your choice.</value>
+    <value>The app restarts automatically to apply your choice.</value>
   </data>
   <data name="SystemLanguageName" xml:space="preserve">
     <value>Follow system</value>
+  </data>
+  <data name="LanguageRestartErrorTitle" xml:space="preserve">
+    <value>Could not restart the app</value>
+  </data>
+  <data name="LanguageRestartErrorMessage" xml:space="preserve">
+    <value>Your language choice is saved. Restart the app manually to apply it.</value>
   </data>
 </root>
