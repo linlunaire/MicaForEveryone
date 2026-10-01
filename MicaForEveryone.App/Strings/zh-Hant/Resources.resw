@@ -315,4 +315,16 @@
   <data name="PrivacyButton.Content" xml:space="preserve">
     <value>隱私權政策</value>
   </data>
+  <data name="GeneralLabel.Text" xml:space="preserve">
+    <value>一般</value>
+  </data>
+  <data name="LanguageCard.Header" xml:space="preserve">
+    <value>語言</value>
+  </data>
+  <data name="LanguageCard.Description" xml:space="preserve">
+    <value>變更介面語言並儲存選擇。</value>
+  </data>
+  <data name="SystemLanguageName" xml:space="preserve">
+    <value>依照系統</value>
+  </data>
 </root>

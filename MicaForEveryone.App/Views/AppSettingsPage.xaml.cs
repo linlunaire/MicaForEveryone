@@ -1,8 +1,11 @@
 using MicaForEveryone.App.ViewModels;
+using MicaForEveryone.App.Services;
 using MicaForEveryone.CoreUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using System.Threading.Tasks;
+using System;
+using Windows.Globalization;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -18,6 +21,7 @@ public sealed partial class AppSettingsPage : Page
     private IStartupService StartupService { get; }
 
     private ISettingsService SettingsService { get; }
+    private ILocalizationService LocalizationService { get; }
 
     public AppSettingsPage()
     {
@@ -26,8 +30,40 @@ public sealed partial class AppSettingsPage : Page
         ViewModel = App.Services.GetRequiredService<AppSettingsPageViewModel>();
         StartupService = App.Services.GetRequiredService<IStartupService>();
         SettingsService = App.Services.GetRequiredService<ISettingsService>();
+        LocalizationService = App.Services.GetRequiredService<ILocalizationService>();
 
+        PopulateLanguages();
         _ = PopulateStartupToggle();
+    }
+
+    private void PopulateLanguages()
+    {
+        var systemItem = new ComboBoxItem
+        {
+            Content = LocalizationService.GetLocalizedString("SystemLanguageName"),
+            Tag = string.Empty
+        };
+        LanguageComboBox.Items.Add(systemItem);
+        LanguageComboBox.SelectedItem = systemItem;
+
+        foreach (string tag in LocalizationService.SupportedLanguages)
+        {
+            var item = new ComboBoxItem { Content = new Language(tag).NativeName, Tag = tag };
+            LanguageComboBox.Items.Add(item);
+            if (string.Equals(tag, LocalizationService.CurrentLanguage, StringComparison.OrdinalIgnoreCase))
+                LanguageComboBox.SelectedItem = item;
+        }
+        LanguageComboBox.SelectionChanged += LanguageComboBox_SelectionChanged;
+    }
+
+    private void LanguageComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (LanguageComboBox.SelectedItem is ComboBoxItem { Tag: string languageTag }
+            && !string.Equals(languageTag, LocalizationService.CurrentLanguage, StringComparison.OrdinalIgnoreCase))
+        {
+            LocalizationService.SetLanguage(languageTag);
+            DispatcherQueue.TryEnqueue(() => App.Services.GetRequiredService<MainAppService>().ReloadSettings());
+        }
     }
 
     private async Task PopulateStartupToggle()
@@ -55,6 +91,7 @@ public sealed partial class AppSettingsPage : Page
         Unloaded -= Page_Unloaded;
         StartupToggle.Toggled -= StartupToggle_Toggled;
         TelemetryToggle.Toggled -= TelemetryToggle_Toggled;
+        LanguageComboBox.SelectionChanged -= LanguageComboBox_SelectionChanged;
 
         Bindings?.StopTracking();
     }

@@ -88,6 +88,15 @@ public sealed unsafe class MainAppService
         DestroyWindow(_mainWnd);
     }
 
+    public void ReloadSettings()
+    {
+        _window?.Close();
+        if (_source is not null)
+            _source.Content = new TrayIconPage();
+        ActivateSettings();
+        _window!.ShowAppSettings();
+    }
+
     [UnmanagedCallersOnly]
     [DynamicWindowsRuntimeCast(typeof(MenuFlyout))]
     private static LRESULT WindowProc(HWND hWnd, uint Msg, WPARAM wParam, LPARAM lParam)

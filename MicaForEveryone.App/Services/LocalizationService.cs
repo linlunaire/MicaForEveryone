@@ -2,23 +2,51 @@
 using MicaForEveryone.Models;
 using Microsoft.Windows.ApplicationModel.Resources;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using Windows.Globalization;
 
 namespace MicaForEveryone.App.Services;
 
-// TODO: actually implement this class
 public sealed class LocalizationService : ILocalizationService
 {
-    private readonly ResourceLoader resourceLoader = new();
+    private readonly ResourceManager resourceManager = new();
+    private ResourceContext resourceContext;
+
+    public LocalizationService()
+    {
+        resourceContext = CreateResourceContext();
+    }
+
+    public IReadOnlyList<string> SupportedLanguages => ApplicationLanguages.ManifestLanguages;
+
+    public string CurrentLanguage => ApplicationLanguages.PrimaryLanguageOverride;
+
+    public void SetLanguage(string languageTag)
+    {
+        if (languageTag.Length != 0 && !SupportedLanguages.Contains(languageTag, StringComparer.OrdinalIgnoreCase))
+            throw new ArgumentException("Unsupported language.", nameof(languageTag));
+
+        ApplicationLanguages.PrimaryLanguageOverride = languageTag;
+        resourceContext = CreateResourceContext();
+    }
+
+    private ResourceContext CreateResourceContext()
+    {
+        var context = resourceManager.CreateResourceContext();
+        context.QualifierValues["Language"] = string.Join(";", ApplicationLanguages.Languages);
+        return context;
+    }
 
     public string GetLocalizedBackdropType(BackdropType backdropType)
     {
         return backdropType switch
         {
-            BackdropType.Default => resourceLoader.GetString("DefaultBackdropName"),
-            BackdropType.None => resourceLoader.GetString("NoneBackdropName"),
-            BackdropType.Mica => resourceLoader.GetString("MicaBackdropName"),
-            BackdropType.Acrylic => resourceLoader.GetString("AcrylicBackdropName"),
-            BackdropType.MicaAlt => resourceLoader.GetString("MicaAltBackdropName"),
+            BackdropType.Default => GetLocalizedString("DefaultBackdropName"),
+            BackdropType.None => GetLocalizedString("NoneBackdropName"),
+            BackdropType.Mica => GetLocalizedString("MicaBackdropName"),
+            BackdropType.Acrylic => GetLocalizedString("AcrylicBackdropName"),
+            BackdropType.MicaAlt => GetLocalizedString("MicaAltBackdropName"),
             _ => throw new ArgumentException("Invalid backdrop type.", nameof(backdropType)),
         };
     }
@@ -26,27 +54,27 @@ public sealed class LocalizationService : ILocalizationService
     public string GetLocalizedCornerPreference(CornerPreference cornerPreference)
     {
         return cornerPreference switch {
-            CornerPreference.Default => resourceLoader.GetString("DefaultCornerPreference"),
-            CornerPreference.RoundedSmall => resourceLoader.GetString("RoundedSmallCornerPreference"),
-            CornerPreference.Rounded => resourceLoader.GetString("RoundedCornerPreference"),
-            CornerPreference.Square => resourceLoader.GetString("SquareCornerPreference"),
+            CornerPreference.Default => GetLocalizedString("DefaultCornerPreference"),
+            CornerPreference.RoundedSmall => GetLocalizedString("RoundedSmallCornerPreference"),
+            CornerPreference.Rounded => GetLocalizedString("RoundedCornerPreference"),
+            CornerPreference.Square => GetLocalizedString("SquareCornerPreference"),
             _ => throw new ArgumentException("Invalid corner preference.", nameof(cornerPreference)),
         };
     }
 
     public string GetLocalizedString(string key)
     {
-        return resourceLoader.GetString(key);
+        return resourceManager.MainResourceMap.GetSubtree("Resources").GetValue(key, resourceContext).ValueAsString;
     }
 
     public string GetLocalizedTitleBarColor(TitleBarColorMode titleBarColorMode)
     {
         return titleBarColorMode switch {
-            TitleBarColorMode.Default => resourceLoader.GetString("DefaultTitleBarColorMode"),
-            TitleBarColorMode.Light => resourceLoader.GetString("LightTitleBarColorMode"),
-            TitleBarColorMode.Dark => resourceLoader.GetString("DarkTitleBarColorMode"),
-            TitleBarColorMode.System => resourceLoader.GetString("SystemTitleBarColorMode"),
-            TitleBarColorMode.Custom => resourceLoader.GetString("CustomTitleBarColorMode"),
+            TitleBarColorMode.Default => GetLocalizedString("DefaultTitleBarColorMode"),
+            TitleBarColorMode.Light => GetLocalizedString("LightTitleBarColorMode"),
+            TitleBarColorMode.Dark => GetLocalizedString("DarkTitleBarColorMode"),
+            TitleBarColorMode.System => GetLocalizedString("SystemTitleBarColorMode"),
+            TitleBarColorMode.Custom => GetLocalizedString("CustomTitleBarColorMode"),
             _ => throw new ArgumentException("Invalid title bar color mode.", nameof(titleBarColorMode)),
         };
     }
@@ -54,7 +82,7 @@ public sealed class LocalizationService : ILocalizationService
     public string GetRuleName(Rule rule)
     {
         if (rule is GlobalRule)
-            return resourceLoader.GetString("GlobalRuleName");
+            return GetLocalizedString("GlobalRuleName");
         if (rule is ProcessRule processRule)
             return processRule.ProcessName;
         if (rule is ClassRule classRule)
